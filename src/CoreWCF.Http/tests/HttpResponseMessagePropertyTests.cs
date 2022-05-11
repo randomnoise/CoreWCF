@@ -49,14 +49,11 @@ namespace CoreWCF.Http.Tests
                     channel = factory.CreateChannel();
                     using (new System.ServiceModel.OperationContextScope(channel as System.ServiceModel.IContextChannel))
                     {
-                        if (!string.IsNullOrEmpty(connectionRequestHeader))
-                        {
-                            var httpRequestMessageProperty = new System.ServiceModel.Channels.HttpRequestMessageProperty();
-                            httpRequestMessageProperty.Headers[HttpRequestHeader.Connection] = connectionRequestHeader;
-                            System.ServiceModel.OperationContext.Current.OutgoingMessageProperties.Add(
-                                System.ServiceModel.Channels.HttpRequestMessageProperty.Name,
-                                httpRequestMessageProperty);
-                        }
+                        var httpRequestMessageProperty = new System.ServiceModel.Channels.HttpRequestMessageProperty();
+                        httpRequestMessageProperty.Headers[HttpRequestHeader.Connection] = connectionRequestHeader;
+                        System.ServiceModel.OperationContext.Current.OutgoingMessageProperties.Add(
+                            System.ServiceModel.Channels.HttpRequestMessageProperty.Name,
+                            httpRequestMessageProperty);
 
                         channel.EchoString(string.Empty);
 
