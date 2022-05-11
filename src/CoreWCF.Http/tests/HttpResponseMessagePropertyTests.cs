@@ -2,9 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using CoreWCF.Channels;
 using CoreWCF.Configuration;
 using Helpers;
@@ -26,11 +24,9 @@ namespace CoreWCF.Http.Tests
         }
 
         [Fact]
-        public void GetCorrespondingConnectionResponseHeaderTest()
+        public void GetCorrespondingConnectionResponseHeader()
         {
-            string testString = new string('a', 3000);
             IWebHost host = ServiceHelper.CreateWebHostBuilder<Startup>(_output).Build();
-
             using (host)
             {
                 host.Start();
@@ -53,18 +49,25 @@ namespace CoreWCF.Http.Tests
                             System.ServiceModel.Channels.HttpRequestMessageProperty.Name,
                             httpRequestMessageProperty);
 
-                        string result = channel.EchoString(testString);
+                        channel.EchoString(string.Empty);
 
-                        var final = System.ServiceModel.OperationContext.Current.IncomingMessageProperties;
+                        string responseConnectionHeader = null;
+                        if (System.ServiceModel.OperationContext.Current.IncomingMessageProperties.TryGetValue(
+                                HttpResponseMessageProperty.Name,
+                                out object output))
+                        {
+                            var httpResponseHeaders = output as System.ServiceModel.Channels.HttpResponseMessageProperty;
+                            responseConnectionHeader = httpResponseHeaders.Headers[HttpResponseHeader.Connection];
+                        }
 
-                        Assert.Equal(testString, result);
+                        Assert.Equal("close", responseConnectionHeader);
                     }
                 }
                 finally
                 {
                     ServiceHelper.CloseServiceModelObjects(channel as System.ServiceModel.Channels.IChannel, factory);
                 }
-            }                
+            }
         }
 
         internal class Startup
