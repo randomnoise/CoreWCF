@@ -23,8 +23,14 @@ namespace CoreWCF.Http.Tests
             _output = output;
         }
 
-        [Fact]
-        public void GetCorrespondingConnectionResponseHeader()
+        [Theory]
+        [InlineData(null, "keep-alive")]
+        [InlineData("keep-alive", "keep-alive")]
+        [InlineData("close", "close")]
+        [InlineData("invalidValue", "keep-alive")]
+        public void GetCorrespondingConnectionResponseHeader(
+            string connectionRequestHeader,
+            string expectedConnectionResponseHeader)
         {
             IWebHost host = ServiceHelper.CreateWebHostBuilder<Startup>(_output).Build();
             using (host)
@@ -43,11 +49,14 @@ namespace CoreWCF.Http.Tests
                     channel = factory.CreateChannel();
                     using (new System.ServiceModel.OperationContextScope(channel as System.ServiceModel.IContextChannel))
                     {
-                        var httpRequestMessageProperty = new System.ServiceModel.Channels.HttpRequestMessageProperty();
-                        httpRequestMessageProperty.Headers[HttpRequestHeader.Connection] = "close";
-                        System.ServiceModel.OperationContext.Current.OutgoingMessageProperties.Add(
-                            System.ServiceModel.Channels.HttpRequestMessageProperty.Name,
-                            httpRequestMessageProperty);
+                        if (!string.IsNullOrEmpty(connectionRequestHeader))
+                        {
+                            var httpRequestMessageProperty = new System.ServiceModel.Channels.HttpRequestMessageProperty();
+                            httpRequestMessageProperty.Headers[HttpRequestHeader.Connection] = connectionRequestHeader;
+                            System.ServiceModel.OperationContext.Current.OutgoingMessageProperties.Add(
+                                System.ServiceModel.Channels.HttpRequestMessageProperty.Name,
+                                httpRequestMessageProperty);
+                        }
 
                         channel.EchoString(string.Empty);
 
@@ -60,7 +69,7 @@ namespace CoreWCF.Http.Tests
                             responseConnectionHeader = httpResponseHeaders.Headers[HttpResponseHeader.Connection];
                         }
 
-                        Assert.Equal("close", responseConnectionHeader);
+                        Assert.Equal(expectedConnectionResponseHeader, responseConnectionHeader);
                     }
                 }
                 finally
